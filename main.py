@@ -1,39 +1,46 @@
 import pandas as pd
-import matplotlib.pyplot as plt
 
-# --- Load CPI data ---
-cpi_df = pd.read_csv("cpi_australia.csv")
-cpi_df['Quarter'] = pd.to_datetime(cpi_df['Quarter'], format='%b-%y', errors='coerce')
-cpi_df.rename(columns={'Quarter': 'Date', 'Annual change (%)': 'Inflation Rate'}, inplace=True)
-cpi_df = cpi_df[['Date', 'Inflation Rate']]
+def load_food_data(filepath):
+    """
+    Load FAO Food Price Index dataset and ensure the 'Food Price Index' column exists.
+    Cleans column names to avoid KeyError issues.
+    """
+    df = pd.read_csv(filepath)
 
-# --- Load Food Price data ---
-food_df = pd.read_csv("food_data.csv")
-food_df['Date'] = pd.to_datetime(food_df['Date'], format='%Y-%m', errors='coerce')
-food_df = food_df[['Date', 'Food Price Index']]
+    # Clean column names: strip spaces, lowercase
+    df.columns = df.columns.str.strip().str.lower()
 
-# --- Merge datasets ---
-merged_df = pd.merge(cpi_df, food_df, on='Date', how='inner')
+    # Try to standardize the column name
+    if 'value' in df.columns:
+        df.rename(columns={'value': 'food price index'}, inplace=True)
+    elif 'food price index' not in df.columns:
+        raise KeyError(
+            f"No 'Food Price Index' column found. Available columns: {list(df.columns)}"
+        )
 
-# --- Plot ---
-plt.figure(figsize=(12, 6))
-plt.plot(merged_df['Date'], merged_df['Inflation Rate'], label='Inflation Rate (%)', color='blue', marker='o')
-plt.plot(merged_df['Date'], merged_df['Food Price Index'], label='Food Price Index', color='green', marker='o')
+    return df
 
-plt.title("Inflation Rate vs Food Price Index Over Time")
-plt.xlabel("Date")
-plt.ylabel("Rate / Index")
-plt.legend()
-plt.grid(True)
-plt.xticks(rotation=45)
-plt.tight_layout()
-plt.show()
 
-from data_module import load_cpi_data, load_food_price_data, merge_datasets, plot_combined_trends
+def load_inflation_data(filepath):
+    """
+    Load inflation dataset and ensure the 'Inflation Rate' column exists.
+    Cleans column names to avoid KeyError issues.
+    """
+    df = pd.read_csv(filepath)
 
-cpi_df = load_cpi_data("cpi_australia.csv")
-food_df = load_food_price_data("food_data.csv")
+    # Clean column names
+    df.columns = df.columns.str.strip().str.lower()
 
-merged_df = merge_datasets(cpi_df, food_df)
-plot_combined_trends(merged_df)
+    # Try to standardize the column name
+    if 'inflation rate' not in df.columns:
+        # If it's named differently, try to guess
+        possible_matches = [col for col in df.columns if 'inflation' in col]
+        if possible_matches:
+            df.rename(columns={possible_matches[0]: 'inflation rate'}, inplace=True)
+        else:
+            raise KeyError(
+                f"No 'Inflation Rate' column found. Available columns: {list(df.columns)}"
+            )
+
+    return df
 

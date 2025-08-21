@@ -1,38 +1,55 @@
-
-# data_module.py
 import pandas as pd
 import matplotlib.pyplot as plt
 
-def load_food_price_data(filepath):
+# ---------- Data Loading ----------
+def load_cpi_data(filepath):
     """
-    Loads the food price indices CSV and converts the 'Date' column to datetime.
+    Load CPI dataset without converting quarters to dates.
+    Returns a DataFrame with all columns as in the CSV.
+    """
+    df = pd.read_csv(filepath)
+    return df
+
+def load_food_data(filepath):
+    """
+    Load FAO Food Price Index dataset and keep only relevant columns if present.
+    Returns a DataFrame.
     """
     df = pd.read_csv(filepath)
     
-    # Ensure the 'Date' column exists and is in datetime format
-    if 'Date' in df.columns:
-        df['Date'] = pd.to_datetime(df['Date'])
-    else:
-        raise ValueError("Expected a 'Date' column in the dataset.")
+    # If the expected columns exist, keep only them
+    if 'Date' in df.columns and 'Food Price Index' in df.columns:
+        df = df[['Date', 'Food Price Index']].dropna()
     
     return df
 
-def plot_food_price_trends(df):
+# ---------- Plotting ----------
+def plot_cpi(df):
     """
-    Plots line charts for each food price index over time.
+    Plot CPI quarterly and annual change using index as x-axis.
     """
-    plt.figure(figsize=(12, 6))
-    
-    # Plot each index column (excluding 'Date')
-    for column in df.columns:
-        if column != 'Date':
-            plt.plot(df['Date'], df[column], label=column)
-    
-    plt.title("Food Price Indices Over Time")
-    plt.xlabel("Date")
-    plt.ylabel("Index Value")
-    plt.legend(loc='upper left')
+    plt.figure(figsize=(10, 5))
+    plt.plot(df.index, df['Change from previous quarter (%)'], marker='o', label='Quarterly Change (%)')
+    plt.plot(df.index, df['Annual change (%)'], marker='s', label='Annual Change (%)')
+    plt.title('CPI Trends in Australia')
+    plt.xlabel('Data Point Index')
+    plt.ylabel('Percentage Change')
+    plt.legend()
     plt.grid(True)
     plt.tight_layout()
     plt.show()
 
+def plot_food_index(df):
+    """
+    Plot FAO Food Price Index using index as x-axis.
+    """
+    plt.figure(figsize=(10, 5))
+    plt.plot(df.index, df['Food Price Index'], color='orange', marker='o')
+    plt.title('FAO Food Price Index')
+    plt.xlabel('Data Point Index')
+    plt.ylabel('Index (2014-2016=100)')
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+# main.py
+# This script serves as the main entry point for the data visualization module.
